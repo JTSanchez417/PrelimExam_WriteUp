@@ -1,0 +1,33 @@
+import cv2
+import numpy as np
+import time
+import os
+from concurrent.futures import ThreadPoolExecutor
+
+def apply_laplacian(image):
+    laplacian_kernel = np.array([[0, 1, 0], [1, -4, 1], [0, 1, 0]])
+    return cv2.filter2D(image, -1, laplacian_kernel)
+
+def process_image(image_path):
+    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    if image is None:
+        return 0
+    start_time = time.time()
+    apply_laplacian(image)
+    return time.time() - start_time
+
+def process_images(image_dir, num_images, max_workers=4):
+    image_files = [f for f in os.listdir(image_dir) if f.endswith(('.jpg', '.png'))][:num_images]
+    image_paths = [os.path.join(image_dir, f) for f in image_files]
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        total_time = sum(executor.map(process_image, image_paths))
+
+    print(f"Total processing time for {len(image_files)} images: {total_time:.6f} seconds")
+
+def main():
+    image_dir = '/content/drive/MyDrive/train/'
+    process_images(image_dir, num_images=1000, max_workers=8)
+
+if __name__ == "__main__":
+    main()
