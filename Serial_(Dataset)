@@ -1,0 +1,32 @@
+import cv2
+import numpy as np
+import time
+import os
+
+def apply_laplacian(image):
+    laplacian_kernel = np.array([[0, 1, 0], [1, -4, 1], [0, 1, 0]], dtype=np.float32)
+    return cv2.filter2D(image, -1, laplacian_kernel)
+
+def process_images(image_dir, num_images):
+    image_files = [f for f in os.listdir(image_dir) if f.endswith(('.jpg', '.png'))][:num_images]
+    total_time = 0
+
+    for image_file in image_files:
+        image_path = os.path.join(image_dir, image_file)
+        image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+        if image is None:
+            print(f"Error loading {image_file}. Skipping...")
+            continue
+
+        start_time = time.time()
+        apply_laplacian(image)
+        total_time += time.time() - start_time
+
+    print(f"Total processing time for {len(image_files)} images: {total_time:.6f} seconds")
+
+def main():
+    image_dir = '/content/drive/MyDrive/train/'
+    process_images(image_dir, num_images=1000)
+
+if __name__ == "__main__":
+    main()
