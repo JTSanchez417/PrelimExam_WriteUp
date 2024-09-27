@@ -1,0 +1,74 @@
+import cv2
+import numpy as np
+import time
+import matplotlib.pyplot as plt
+from multiprocessing import Pool
+
+# Function to apply Laplacian convolution to a single row
+def apply_laplacian_row(row_info):
+    row_index, image, kernel = row_info
+    cols = image.shape[1]
+    output_row = np.zeros(cols)
+    for j in range(1, cols - 1):
+        region = image[row_index - 1:row_index + 2, j - 1:j + 2]
+        output_row[j] = np.sum(region * kernel)
+    return output_row
+
+# Function to apply Laplacian convolution in parallel
+def apply_laplacian_parallel(image):
+    # Define a Laplacian kernel
+    laplacian_kernel = np.array([[0, 1, 0],
+                                 [1, -4, 1],
+                                 [0, 1, 0]])
+
+    rows, cols = image.shape
+    output_image = np.zeros_like(image)
+
+    # Prepare data for each row to be processed
+    row_data = [(i, image, laplacian_kernel) for i in range(1, rows - 1)]
+
+    # Use multiprocessing pool to parallelize row processing
+    with Pool() as pool:
+        result_rows = pool.map(apply_laplacian_row, row_data)
+
+    # Insert the processed rows back into the output image
+    for i, row in enumerate(result_rows, start=1):
+        output_image[i, :] = row
+
+    return output_image
+
+def main():
+    # Load a sample image from dataset (grayscale for simplicity)
+    image = cv2.imread('/content/drive/MyDrive/train/cat.0.jpg', cv2.IMREAD_GRAYSCALE)
+
+    if image is None:
+        print("Error: Could not load image.")
+        return
+
+    # Display original image
+    plt.subplot(1, 2, 1)
+    plt.imshow(image, cmap='gray')
+    plt.title('Original Image')
+
+    # Start timer
+    start_time = time.time()
+
+    # Apply Laplacian convolution (parallel processing)
+    laplacian_image = apply_laplacian_parallel(image)
+
+    # End timer
+    end_time = time.time()
+
+    # Calculate total processing time
+    processing_time = end_time - start_time
+    print(f"Total processing time (parallel): {processing_time:.6f} seconds")
+
+    # Display Laplacian filtered image
+    plt.subplot(1, 2, 2)
+    plt.imshow(laplacian_image, cmap='gray')
+    plt.title('Laplacian Filtered Image')
+
+    plt.show()
+
+if __name__ == "__main__":
+    main()
